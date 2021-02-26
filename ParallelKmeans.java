@@ -86,41 +86,51 @@ public class ParallelKmeans {
         }
     }
 
+    public void assignStep(ExecutorService executorService) throws InterruptedException {
+        Runnable[] assignWorkers = new AssignWorker[numThreads];
+        final int chunk = observations.size() / assignWorkers.length;
+        countDownLatch = new CountDownLatch(numThreads);
+        for (int j = 0; j < assignWorkers.length; j++) {
+            assignWorkers[j] = new AssignWorker(j * chunk, (j + 1) * chunk);
+            executorService.execute(assignWorkers[j]);
+        }
+        countDownLatch.await();
+
+    }
+
+    public void updateStep(ExecutorService executorService) throws InterruptedException {
+
+        countDownLatch = new CountDownLatch(numThreads);
+
+        UpdateWorker[] updateWorkers = new UpdateWorker[numThreads];
+        final int chunk = observations.size() / updateWorkers.length;
+        for (int j = 0; j < updateWorkers.length; j++) {
+            updateWorkers[j] = new UpdateWorker(j * chunk, (j + 1) * chunk);
+            executorService.execute(updateWorkers[j]);
+        }
+        countDownLatch.await();
+        clusters = new float[k][n];
+        int[] counts = new int[k];
+
+        for (UpdateWorker u : updateWorkers) {
+            add(counts, u.getCounts());
+            for (int j = 0; j < k; j++) {
+                add(clusters[j], u.getClusters()[j]);
+            }
+        }
+
+        for (int j = 0; j < clusters.length; j++) {
+            if (counts[j] != 0) {
+                divide(clusters[j], counts[j]);
+            }
+        }
+    }
+
     void cluster() throws InterruptedException {
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
-
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         for (int i = 0; i < 50; i++) {
-            Runnable[] assignWorkers = new AssignWorker[numThreads];
-            final int chunk = observations.size() / assignWorkers.length;
-            countDownLatch = new CountDownLatch(numThreads);
-            for (int j = 0; j < assignWorkers.length; j++) {
-                assignWorkers[j] = new AssignWorker(j * chunk, (j + 1) * chunk);
-                executorService.execute(assignWorkers[j]);
-            }
-            countDownLatch.await();
-            countDownLatch = new CountDownLatch(numThreads);
-
-            UpdateWorker[] updateWorkers = new UpdateWorker[numThreads];
-            for (int j = 0; j < updateWorkers.length; j++) {
-                updateWorkers[j] = new UpdateWorker(j * chunk, (j + 1) * chunk);
-                executorService.execute(updateWorkers[j]);
-            }
-            countDownLatch.await();
-            clusters = new float[k][n];
-            int[] counts = new int[k];
-
-            for (UpdateWorker u : updateWorkers) {
-                add(counts, u.getCounts());
-                for (int j = 0; j < k; j++) {
-                    add(clusters[j], u.getClusters()[j]);
-                }
-            }
-
-            for (int j = 0; j < clusters.length; j++) {
-                if (counts[j] != 0) {
-                    divide(clusters[j], counts[j]);
-                }
-            }
+            assignStep(executorService);
+            updateStep(executorService);
         }
         executorService.shutdown();
     }
@@ -158,7 +168,6 @@ public class ParallelKmeans {
                 }
                 ob.cluster = idx;
             }
-
             countDownLatch.countDown();
         }
     }
