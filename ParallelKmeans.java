@@ -90,7 +90,7 @@ public class ParallelKmeans {
         ExecutorService executorService = Executors.newFixedThreadPool(5);
 
         for (int i = 0; i < 50; i++) {
-            Thread[] assignWorkers = new AssignWorker[numThreads];
+            Runnable[] assignWorkers = new AssignWorker[numThreads];
             final int chunk = observations.size() / assignWorkers.length;
             countDownLatch = new CountDownLatch(numThreads);
             for (int j = 0; j < assignWorkers.length; j++) {
@@ -98,16 +98,14 @@ public class ParallelKmeans {
                 executorService.execute(assignWorkers[j]);
             }
             countDownLatch.await();
+            countDownLatch = new CountDownLatch(numThreads);
 
             UpdateWorker[] updateWorkers = new UpdateWorker[numThreads];
             for (int j = 0; j < updateWorkers.length; j++) {
                 updateWorkers[j] = new UpdateWorker(j * chunk, (j + 1) * chunk);
-                updateWorkers[j].start();
+                executorService.execute(updateWorkers[j]);
             }
-            for (Thread t : updateWorkers) {
-                t.join();
-            }
-
+            countDownLatch.await();
             clusters = new float[k][n];
             int[] counts = new int[k];
 
@@ -138,7 +136,7 @@ public class ParallelKmeans {
         int cluster;
     }
 
-    class AssignWorker extends Thread {
+    class AssignWorker implements Runnable {
         int l, r;
 
         public AssignWorker(int l, int r) {
@@ -165,7 +163,7 @@ public class ParallelKmeans {
         }
     }
 
-    class UpdateWorker extends Thread {
+    class UpdateWorker implements Runnable {
         int[] counts;
         int l, r;
         float[][] clusters;
@@ -191,6 +189,7 @@ public class ParallelKmeans {
                 add(this.clusters[ob.cluster], ob.vec);
                 this.counts[ob.cluster]++;
             }
+            countDownLatch.countDown();
         }
     }
 
