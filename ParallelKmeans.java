@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ParallelKmeans {
 
-    static final int numThreads = 4;
+    static final int numThreads = 1;
 
     int n = 3;
     int k = 32;
@@ -83,15 +83,15 @@ public class ParallelKmeans {
     }
 
     void cluster() throws InterruptedException {
-        for (int i = 0; i < 100; i++) {
-            Thread[] threads = new AssignWorker[numThreads];
-            final int chunk = observations.size() / threads.length;
+        for (int i = 0; i < 200; i++) {
+            Thread[] assignWorkers = new AssignWorker[numThreads];
+            final int chunk = observations.size() / assignWorkers.length;
 
-            for (int j = 0; j < threads.length; j++) {
-                threads[j] = new AssignWorker(j * chunk, (j + 1) * chunk);
-                threads[j].start();
+            for (int j = 0; j < assignWorkers.length; j++) {
+                assignWorkers[j] = new AssignWorker(j * chunk, (j + 1) * chunk);
+                assignWorkers[j].start();
             }
-            for (Thread t : threads) {
+            for (Thread t : assignWorkers) {
                 t.join();
             }
 
