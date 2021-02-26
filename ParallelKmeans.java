@@ -7,11 +7,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ParallelKmeans {
 
-    static final int numThreads = 1;
-
+    public int numThreads = 1;
+    static CountDownLatch countDownLatch;
     int n = 3;
     int k = 32;
     float[][] clusters = new float[k][n];
@@ -34,18 +37,19 @@ public class ParallelKmeans {
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-
                 Color color = new Color(image.getRGB(j, i));
                 Node node = new Node();
                 node.vec = color.getColorComponents(node.vec);
                 k.observations.add(node);
-
             }
         }
-        long tic = System.currentTimeMillis();
-        k.cluster();
-        System.out.println(System.currentTimeMillis() - tic);
-
+        System.out.println("Threads   time");
+        for(int i = 1;i <= 8; i++) {
+            k.numThreads = i;
+            long tic = System.currentTimeMillis();
+            k.cluster();
+            System.out.println(i + "         " + (System.currentTimeMillis() - tic));
+        }
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 int idx = i * width + j;
@@ -83,17 +87,17 @@ public class ParallelKmeans {
     }
 
     void cluster() throws InterruptedException {
-        for (int i = 0; i < 200; i++) {
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+
+        for (int i = 0; i < 50; i++) {
             Thread[] assignWorkers = new AssignWorker[numThreads];
             final int chunk = observations.size() / assignWorkers.length;
-
+            countDownLatch = new CountDownLatch(numThreads);
             for (int j = 0; j < assignWorkers.length; j++) {
                 assignWorkers[j] = new AssignWorker(j * chunk, (j + 1) * chunk);
-                assignWorkers[j].start();
+                executorService.execute(assignWorkers[j]);
             }
-            for (Thread t : assignWorkers) {
-                t.join();
-            }
+            countDownLatch.await();
 
             UpdateWorker[] updateWorkers = new UpdateWorker[numThreads];
             for (int j = 0; j < updateWorkers.length; j++) {
@@ -120,6 +124,7 @@ public class ParallelKmeans {
                 }
             }
         }
+        executorService.shutdown();
     }
 
     private void add(int[] counts, int[] counts1) {
@@ -155,6 +160,8 @@ public class ParallelKmeans {
                 }
                 ob.cluster = idx;
             }
+
+            countDownLatch.countDown();
         }
     }
 
