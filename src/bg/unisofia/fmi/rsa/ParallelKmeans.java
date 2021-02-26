@@ -1,10 +1,5 @@
-package com.company;
+package bg.unisofia.fmi.rsa;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -13,76 +8,21 @@ import java.util.concurrent.Executors;
 
 public class ParallelKmeans {
 
+    private static CountDownLatch countDownLatch;
+    private final int n;
+    private final int k;
     public int numThreads = 1;
-    static CountDownLatch countDownLatch;
-    int n = 3;
-    int k = 32;
-    float[][] clusters = new float[k][n];
     List<Node> observations = new ArrayList<>();
+    float[][] clusters;
 
-    {
+    public ParallelKmeans(int n, int k) {
+        this.n = n;
+        this.k = k;
+        clusters = new float[k][n];
         for (float[] cluster : clusters) {
             for (int i = 0; i < cluster.length; i++) {
                 cluster[i] = (float) Math.random();
             }
-        }
-    }
-
-    public static void main(String[] args) throws IOException, InterruptedException {
-        ParallelKmeans k = new ParallelKmeans();
-        BufferedImage image = ImageIO.read(new File("owl.jpg"));
-
-        int width = image.getWidth();
-        int height = image.getHeight();
-
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                Color color = new Color(image.getRGB(j, i));
-                Node node = new Node();
-                node.vec = color.getColorComponents(node.vec);
-                k.observations.add(node);
-            }
-        }
-        System.out.println("Threads   time");
-        for(int i = 1;i <= 8; i++) {
-            k.numThreads = i;
-            long tic = System.currentTimeMillis();
-            k.cluster();
-            System.out.println(i + "         " + (System.currentTimeMillis() - tic));
-        }
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                int idx = i * width + j;
-                Node n = k.observations.get(idx);
-                float[] vec = k.clusters[n.cluster];
-                Color c = new Color(vec[0], vec[1], vec[2]);
-                image.setRGB(j, i, c.getRGB());
-            }
-        }
-
-        File output = new File("result.jpg");
-        ImageIO.write(image, "jpg", output);
-
-    }
-
-    public float dist(float[] vec1, float[] vec2) {
-        float res = 0;
-        for (int i = 0; i < vec1.length; i++) {
-            float diff = vec1[i] - vec2[i];
-            res += diff * diff;
-        }
-        return res;
-    }
-
-    public void add(float[] vec1, float[] vec2) {
-        for (int i = 0; i < vec1.length; i++) {
-            vec1[i] += vec2[i];
-        }
-    }
-
-    public void divide(float[] vec, float n) {
-        for (int i = 0; i < vec.length; i++) {
-            vec[i] /= n;
         }
     }
 
@@ -113,32 +53,26 @@ public class ParallelKmeans {
         int[] counts = new int[k];
 
         for (UpdateWorker u : updateWorkers) {
-            add(counts, u.getCounts());
+            VectorMath.add(counts, u.getCounts());
             for (int j = 0; j < k; j++) {
-                add(clusters[j], u.getClusters()[j]);
+                VectorMath.add(clusters[j], u.getClusters()[j]);
             }
         }
 
         for (int j = 0; j < clusters.length; j++) {
             if (counts[j] != 0) {
-                divide(clusters[j], counts[j]);
+                VectorMath.divide(clusters[j], counts[j]);
             }
         }
     }
 
     void cluster() throws InterruptedException {
-        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
         for (int i = 0; i < 50; i++) {
             assignStep(executorService);
             updateStep(executorService);
         }
         executorService.shutdown();
-    }
-
-    private void add(int[] counts, int[] counts1) {
-        for (int i = 0; i < counts.length; i++) {
-            counts[i] += counts1[i];
-        }
     }
 
     public static class Node {
@@ -161,8 +95,8 @@ public class ParallelKmeans {
                 float minDist = Float.POSITIVE_INFINITY;
                 int idx = 0;
                 for (int i = 0; i < clusters.length; i++) {
-                    if (minDist > dist(ob.vec, clusters[i])) {
-                        minDist = dist(ob.vec, clusters[i]);
+                    if (minDist > VectorMath.dist(ob.vec, clusters[i])) {
+                        minDist = VectorMath.dist(ob.vec, clusters[i]);
                         idx = i;
                     }
                 }
@@ -195,7 +129,7 @@ public class ParallelKmeans {
             this.counts = new int[k];
             this.clusters = new float[k][n];
             for (Node ob : observations.subList(l, r)) {
-                add(this.clusters[ob.cluster], ob.vec);
+                VectorMath.add(this.clusters[ob.cluster], ob.vec);
                 this.counts[ob.cluster]++;
             }
             countDownLatch.countDown();
