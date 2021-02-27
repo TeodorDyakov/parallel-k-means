@@ -13,7 +13,7 @@ public class ParallelKmeans {
     private static CountDownLatch countDownLatch;
     private final int n;
     private final int k;
-    private final int MAX_ITERATIONS = 50;
+    private static final int MAX_ITERATIONS = 50;
     public int numThreads = 1;
     List<Node> observations = new ArrayList<>();
     float[][] clusters;
