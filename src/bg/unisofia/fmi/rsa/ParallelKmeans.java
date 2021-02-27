@@ -13,6 +13,7 @@ public class ParallelKmeans {
     private static CountDownLatch countDownLatch;
     private final int n;
     private final int k;
+    private final int MAX_ITERATIONS = 50;
     public int numThreads = 1;
     List<Node> observations = new ArrayList<>();
     float[][] clusters;
@@ -72,7 +73,7 @@ public class ParallelKmeans {
         }
 
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < MAX_ITERATIONS; i++) {
             assignStep(executorService);
             updateStep(executorService);
         }
