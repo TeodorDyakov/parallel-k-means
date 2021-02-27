@@ -22,8 +22,9 @@ public class Demo {
                 k.observations.add(node);
             }
         }
+        final int maxThreads = Runtime.getRuntime().availableProcessors() * 2;
         System.out.println("Threads   time");
-        for (int i = 1; i <= 8; i++) {
+        for (int i = 1; i <= maxThreads; i++) {
             k.numThreads = i;
             long tic = System.currentTimeMillis();
             k.cluster();

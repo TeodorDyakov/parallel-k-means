@@ -1,7 +1,9 @@
 package bg.unisofia.fmi.rsa;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,11 +21,6 @@ public class ParallelKmeans {
         this.n = n;
         this.k = k;
         clusters = new float[k][n];
-        for (float[] cluster : clusters) {
-            for (int i = 0; i < cluster.length; i++) {
-                cluster[i] = (float) Math.random();
-            }
-        }
     }
 
     public void assignStep(ExecutorService executorService) throws InterruptedException {
@@ -67,6 +64,13 @@ public class ParallelKmeans {
     }
 
     void cluster() throws InterruptedException {
+        Random rng = new Random();
+        //initialize the cluster at random
+        for(int i = 0; i < clusters.length; i++){
+            float[] vec = observations.get(rng.nextInt(observations.size())).vec;
+            clusters[i] = Arrays.copyOf(vec, vec.length);
+        }
+
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
         for (int i = 0; i < 50; i++) {
             assignStep(executorService);
