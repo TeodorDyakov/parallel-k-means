@@ -10,10 +10,10 @@ import java.util.concurrent.Executors;
 
 public class ParallelKmeans {
 
+    private static final int MAX_ITERATIONS = 10;
     private static CountDownLatch countDownLatch;
     private final int n;
     private final int k;
-    private static final int MAX_ITERATIONS = 50;
     public int numThreads = 1;
     List<Node> observations = new ArrayList<>();
     float[][] clusters;
@@ -24,29 +24,17 @@ public class ParallelKmeans {
         clusters = new float[k][n];
     }
 
-    public void assignStep(ExecutorService executorService) throws InterruptedException {
-        Runnable[] assignWorkers = new AssignWorker[numThreads];
-        final int chunk = observations.size() / assignWorkers.length;
+    public void assignStep(ExecutorService executorService, AssignWorker[] assignWorkers) throws InterruptedException {
         countDownLatch = new CountDownLatch(numThreads);
-        for (int j = 0; j < assignWorkers.length; j++) {
-            assignWorkers[j] = new AssignWorker(j * chunk, (j + 1) * chunk);
-            executorService.execute(assignWorkers[j]);
-        }
+        Arrays.stream(assignWorkers).forEach(executorService::execute);
         countDownLatch.await();
-
     }
 
-    public void updateStep(ExecutorService executorService) throws InterruptedException {
-
+    public void updateStep(ExecutorService executorService, UpdateWorker[] updateWorkers) throws InterruptedException {
         countDownLatch = new CountDownLatch(numThreads);
-
-        UpdateWorker[] updateWorkers = new UpdateWorker[numThreads];
-        final int chunk = observations.size() / updateWorkers.length;
-        for (int j = 0; j < updateWorkers.length; j++) {
-            updateWorkers[j] = new UpdateWorker(j * chunk, (j + 1) * chunk);
-            executorService.execute(updateWorkers[j]);
-        }
+        Arrays.stream(updateWorkers).forEach(executorService::execute);
         countDownLatch.await();
+
         clusters = new float[k][n];
         int[] counts = new int[k];
 
@@ -64,18 +52,39 @@ public class ParallelKmeans {
         }
     }
 
-    void cluster() throws InterruptedException {
+    private void initializeClusters() {
         Random rng = new Random();
         //initialize the cluster at random
-        for(int i = 0; i < clusters.length; i++){
+        for (int i = 0; i < clusters.length; i++) {
             float[] vec = observations.get(rng.nextInt(observations.size())).vec;
             clusters[i] = Arrays.copyOf(vec, vec.length);
         }
+    }
 
-        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    void cluster() throws InterruptedException {
+        initializeClusters();
+
+        final int maxNumberOfThreads = Runtime.getRuntime().availableProcessors() * 2;
+        ExecutorService executorService = Executors.newFixedThreadPool(maxNumberOfThreads);
+
+        AssignWorker[] assignWorkers = new AssignWorker[numThreads];
+        UpdateWorker[] updateWorkers = new UpdateWorker[numThreads];
+        final int chunkSz = observations.size() / numThreads;
+
+        for (int i = 0; i < numThreads; i++) {
+            int leftIdx = i * chunkSz;
+            int rightIdx = (i + 1) * chunkSz;
+            //handle the corner case for the last chunk
+            if (i == numThreads - 1) {
+                rightIdx = observations.size();
+            }
+            List<Node> chunk = observations.subList(leftIdx, rightIdx);
+            assignWorkers[i] = new AssignWorker(chunk);
+            updateWorkers[i] = new UpdateWorker(chunk);
+        }
         for (int i = 0; i < MAX_ITERATIONS; i++) {
-            assignStep(executorService);
-            updateStep(executorService);
+            assignStep(executorService, assignWorkers);
+            updateStep(executorService, updateWorkers);
         }
         executorService.shutdown();
     }
@@ -86,22 +95,21 @@ public class ParallelKmeans {
     }
 
     class AssignWorker implements Runnable {
-        int l, r;
+        List<Node> chunk;
 
-        public AssignWorker(int l, int r) {
-            this.l = l;
-            this.r = r;
+        public AssignWorker(List<Node> chunk) {
+            this.chunk = chunk;
         }
 
         @Override
         public void run() {
-            List<Node> chunk = observations.subList(l, r);
             for (Node ob : chunk) {
                 float minDist = Float.POSITIVE_INFINITY;
                 int idx = 0;
                 for (int i = 0; i < clusters.length; i++) {
-                    if (minDist > VectorMath.dist(ob.vec, clusters[i])) {
-                        minDist = VectorMath.dist(ob.vec, clusters[i]);
+                    float dist = VectorMath.dist(ob.vec, clusters[i]);
+                    if (minDist > dist) {
+                        minDist = dist;
                         idx = i;
                     }
                 }
@@ -113,12 +121,11 @@ public class ParallelKmeans {
 
     class UpdateWorker implements Runnable {
         int[] counts;
-        int l, r;
         float[][] clusters;
+        List<Node> chunk;
 
-        UpdateWorker(int l, int r) {
-            this.l = l;
-            this.r = r;
+        public UpdateWorker(List<Node> chunk) {
+            this.chunk = chunk;
         }
 
         int[] getCounts() {
@@ -133,7 +140,7 @@ public class ParallelKmeans {
         public void run() {
             this.counts = new int[k];
             this.clusters = new float[k][n];
-            for (Node ob : observations.subList(l, r)) {
+            for (Node ob : chunk) {
                 VectorMath.add(this.clusters[ob.cluster], ob.vec);
                 this.counts[ob.cluster]++;
             }

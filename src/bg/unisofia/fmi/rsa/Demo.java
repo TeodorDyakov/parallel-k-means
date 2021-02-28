@@ -8,8 +8,8 @@ import java.io.IOException;
 
 public class Demo {
     public static void main(String[] args) throws IOException, InterruptedException {
-        ParallelKmeans k = new ParallelKmeans(3, 32);
-        BufferedImage image = ImageIO.read(new File("owl.jpg"));
+        ParallelKmeans k = new ParallelKmeans(3, 8);
+        BufferedImage image = ImageIO.read(new File("Parrot.jpg"));
 
         int width = image.getWidth();
         int height = image.getHeight();
@@ -22,6 +22,7 @@ public class Demo {
                 k.observations.add(node);
             }
         }
+
         final int maxThreads = Runtime.getRuntime().availableProcessors() * 2;
         System.out.println("Threads   time");
         for (int i = 1; i <= maxThreads; i++) {
