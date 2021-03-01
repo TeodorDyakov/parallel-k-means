@@ -18,6 +18,9 @@ public class VectorMath {
     }
 
     public static void divide(float[] vec, float n) {
+        if (n == 0) {
+            return;
+        }
         for (int i = 0; i < vec.length; i++) {
             vec[i] /= n;
         }

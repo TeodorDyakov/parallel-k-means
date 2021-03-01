@@ -46,9 +46,7 @@ public class ParallelKmeans {
         }
 
         for (int j = 0; j < clusters.length; j++) {
-            if (counts[j] != 0) {
-                VectorMath.divide(clusters[j], counts[j]);
-            }
+            VectorMath.divide(clusters[j], counts[j]);
         }
     }
 
