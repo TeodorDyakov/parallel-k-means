@@ -89,7 +89,7 @@ public class ParallelKmeans {
 
     public static class Observation {
         float[] vec;
-        int cluster;
+        volatile int cluster;
     }
 
     class AssignWorker implements Runnable {
