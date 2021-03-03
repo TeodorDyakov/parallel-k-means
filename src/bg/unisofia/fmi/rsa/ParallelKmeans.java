@@ -93,7 +93,7 @@ public class ParallelKmeans {
     }
 
     class AssignWorker implements Runnable {
-        List<Observation> chunk;
+        private final List<Observation> chunk;
 
         public AssignWorker(List<Observation> chunk) {
             this.chunk = chunk;
@@ -118,11 +118,11 @@ public class ParallelKmeans {
     }
 
     class UpdateWorker implements Runnable {
-        volatile int[] counts;
-        volatile float[][] clusterCenters;
-        List<Observation> chunk;
+        private volatile int[] counts;
+        private volatile float[][] clusterCenters;
+        private final List<Observation> chunk;
 
-        public UpdateWorker(List<Observation> chunk) {
+        UpdateWorker(List<Observation> chunk) {
             this.chunk = chunk;
         }
 
@@ -130,7 +130,7 @@ public class ParallelKmeans {
             return counts;
         }
 
-        public float[][] getClusterCenters() {
+        float[][] getClusterCenters() {
             return clusterCenters;
         }
 
