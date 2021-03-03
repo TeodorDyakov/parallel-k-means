@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class Demo {
     public static void main(String[] args) throws IOException, InterruptedException {
-        ParallelKmeans k = new ParallelKmeans(3, 8);
+        ParallelKmeans k = new ParallelKmeans(3, 50);
         BufferedImage image = ImageIO.read(new File("Parrot.jpg"));
 
         int width = image.getWidth();
@@ -17,7 +17,7 @@ public class Demo {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 Color color = new Color(image.getRGB(j, i));
-                ParallelKmeans.Node node = new ParallelKmeans.Node();
+                ParallelKmeans.Observation node = new ParallelKmeans.Observation();
                 node.vec = color.getColorComponents(node.vec);
                 k.observations.add(node);
             }
@@ -34,8 +34,8 @@ public class Demo {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 int idx = i * width + j;
-                ParallelKmeans.Node n = k.observations.get(idx);
-                float[] vec = k.clusters[n.cluster];
+                ParallelKmeans.Observation n = k.observations.get(idx);
+                float[] vec = k.clusterCenters[n.cluster];
                 Color c = new Color(vec[0], vec[1], vec[2]);
                 image.setRGB(j, i, c.getRGB());
             }
