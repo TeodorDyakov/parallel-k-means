@@ -1,6 +1,10 @@
-h1 {text-align: center;
+h1{text-align: center;
 }
 
+/*#author{
+	text-align: right;
+}
+*/
 html{
 	font-family:"Arial";
 }
@@ -10,12 +14,8 @@ html{
   margin: auto;
   width: 60%;
   border: 3px solid grey;
-  /*padding: 10px;*/
-}
-
-#main{
-	padding: 10px;
-	/*margin:10px;*/
+  padding: 10px;
+  border-radius: 5px;
 }
 
 #algorithm{
@@ -23,29 +23,45 @@ html{
 	width: 80%;
 	padding: 20px;
 	border: 2px solid grey;
+	border-radius: 5px;
 }
 
 #subtitle{
 	text-align: center;
 }
 
-img.resize {
-    /*width:200px;  you can use % */
-    height: auto;
-}
 
-img{
-	width: 60%;
+#gif{
+    height: auto;
+	width: 50%;
 	display: block;
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
 }
 
 #label{
 	text-align: center;
 }
 
-.math{	
+.bold{	
 	  font-weight: bold;
+}
+
+.flex-child {
+    flex: 1;
+    text-align: center;
+}  
+
+.flex-child:first-child {
+    margin-right: 2px;
+} 
+
+.flex{
+	display: flex;
+}
+
+.testImg{
+	width:90%;
+	height: auto;
 }
