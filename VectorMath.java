@@ -1,5 +1,3 @@
-package bg.unisofia.fmi.rsa;
-
 public class VectorMath {
 
     public static float dist(float[] vec1, float[] vec2) {
@@ -18,6 +16,9 @@ public class VectorMath {
     }
 
     public static void divide(float[] vec, float n) {
+        if (n == 0) {
+            return;
+        }
         for (int i = 0; i < vec.length; i++) {
             vec[i] /= n;
         }

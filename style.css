@@ -1,0 +1,51 @@
+h1 {text-align: center;
+}
+
+html{
+	font-family:"Arial";
+}
+
+#main {
+		text-align: left;
+  margin: auto;
+  width: 60%;
+  border: 3px solid grey;
+  /*padding: 10px;*/
+}
+
+#main{
+	padding: 10px;
+	/*margin:10px;*/
+}
+
+#algorithm{
+	margin: auto;
+	width: 80%;
+	padding: 20px;
+	border: 2px solid grey;
+}
+
+#subtitle{
+	text-align: center;
+}
+
+img.resize {
+    /*width:200px;  you can use % */
+    height: auto;
+}
+
+img{
+	width: 60%;
+	display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+}
+
+#label{
+	text-align: center;
+}
+
+.math{	
+	  font-weight: bold;
+}
