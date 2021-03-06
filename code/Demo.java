@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class Demo {
     public static void main(String[] args) throws IOException, InterruptedException {
-        ParallelKmeans k = new ParallelKmeans(3, 50);
+        ParallelKmeans k = new ParallelKmeans(3, 8);
         BufferedImage image = ImageIO.read(new File("Parrot.jpg"));
 
         int width = image.getWidth();

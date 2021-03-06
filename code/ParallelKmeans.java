@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 
 public class ParallelKmeans {
 
-    private static final int MAX_ITERATIONS = 100;
+    private static final int MAX_ITERATIONS = 10;
     private static CountDownLatch countDownLatch;
     private final int n;
     private final int k;
