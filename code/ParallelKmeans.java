@@ -8,11 +8,11 @@ import java.util.concurrent.Executors;
 
 public class ParallelKmeans {
 
-    private static final int MAX_ITERATIONS = 10;
-    private static CountDownLatch countDownLatch;
+    private int maxIterations = 10;
+    private CountDownLatch countDownLatch;
     private final int n;
     private final int k;
-    public int numThreads = 1;
+    private int numThreads = 1;
     List<Observation> observations = new ArrayList<>();
     float[][] clusterCenters;
 
@@ -20,6 +20,14 @@ public class ParallelKmeans {
         this.n = n;
         this.k = k;
         clusterCenters = new float[k][n];
+    }
+
+    public void setNumThreads(int numThreads){
+        this.numThreads = numThreads;
+    }
+
+    public void setMaxIterations(int maxIterations){
+        this.maxIterations = maxIterations;
     }
 
     public void assignStep(ExecutorService executorService, AssignWorker[] assignWorkers) throws InterruptedException {
@@ -78,7 +86,7 @@ public class ParallelKmeans {
             assignWorkers[i] = new AssignWorker(chunk);
             updateWorkers[i] = new UpdateWorker(chunk);
         }
-        for (int i = 0; i < MAX_ITERATIONS; i++) {
+        for (int i = 0; i < maxIterations; i++) {
             assignStep(executorService, assignWorkers);
             updateStep(executorService, updateWorkers);
         }
